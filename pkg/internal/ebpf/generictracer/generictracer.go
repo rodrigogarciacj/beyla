@@ -29,8 +29,10 @@ import (
 //go:generate $BPF2GO -cc $BPF_CLANG -cflags $BPF_CFLAGS -target amd64,arm64 bpf_debug ../../../../bpf/generic_tracer.c -- -I../../../../bpf/headers -DBPF_DEBUG
 //go:generate $BPF2GO -cc $BPF_CLANG -cflags $BPF_CFLAGS -target amd64,arm64 bpf_tp_debug ../../../../bpf/generic_tracer.c -- -I../../../../bpf/headers -DBPF_DEBUG -DBPF_TRACEPARENT
 
-var instrumentedLibs = make(ebpfcommon.InstrumentedLibsT)
-var libsMux sync.Mutex
+var (
+	instrumentedLibs = make(ebpfcommon.InstrumentedLibsT)
+	libsMux          sync.Mutex
+)
 
 type Tracer struct {
 	pidsFilter     ebpfcommon.ServiceFilter
@@ -173,7 +175,6 @@ func (p *Tracer) SetupTailCalls() {
 		},
 	} {
 		err := p.bpfObjects.JumpTable.Update(uint32(tc.index), uint32(tc.prog.FD()), ebpf.UpdateAny)
-
 		if err != nil {
 			p.log.Error("error loading info tail call jump table", "error", err)
 		}
@@ -311,6 +312,10 @@ func (p *Tracer) KProbes() map[string]ebpfcommon.ProbeDesc {
 			Required: true,
 			Start:    p.bpfObjects.BeylaKprobeUnixStreamSendmsg,
 			End:      p.bpfObjects.BeylaKretprobeUnixStreamSendmsg,
+		},
+		"sys_recvfrom": {
+			Required: true,
+			Start:    p.bpfObjects.BeylaKprobeSysRecvfrom,
 		},
 	}
 

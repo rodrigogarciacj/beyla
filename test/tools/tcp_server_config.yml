@@ -1,0 +1,5 @@
+print_traces: true
+trace_printer: text
+log_level: INFO
+open_port: 8080
+enforce_sys_caps: true
